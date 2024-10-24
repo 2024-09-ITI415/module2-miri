@@ -2,11 +2,6 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-/// <summary>
-/// This is an enum of the various possible weapon types.
-/// It also includes a "shield" type to allow a shield power-up.
-/// Items marked [NI] below are Not Implemented in the IGDPD book.
-/// </summary>
 public enum WeaponType
 {
     none, // The default / no weapons
@@ -18,11 +13,6 @@ public enum WeaponType
     shield // Raise shieldLevel
 }
 
-/// <summary>
-/// The WeaponDefinition class allows you to set the properties
-/// of a specific weapon in the Inspector. The Main class has
-/// an array of WeaponDefinitions that makes this possible.
-/// </summary>
 [System.Serializable]
 public class WeaponDefinition
 {
@@ -31,12 +21,14 @@ public class WeaponDefinition
     public Color color = Color.white; // Color of Collar & power-up
     public GameObject projectilePrefab; // Prefab for projectiles
     public Color projectileColor = Color.white;
-    public float damageOnHit = 0; // Amount of damage caused
+    public float damageOnHit = 15; // Amount of damage caused
     public float continuousDamage = 0; // Damage per second (Laser)
-    public float delayBetweenShots = 0;
+    public float delayBetweenShots = 0.2f; // Increased delay since +15 damage
     public float velocity = 20; // Speed of projectiles
 }
-public class Weapon : MonoBehaviour {
+
+public class Weapon : MonoBehaviour
+{
     static public Transform PROJECTILE_ANCHOR;
 
     [Header("Set Dynamically")]
@@ -49,22 +41,29 @@ public class Weapon : MonoBehaviour {
 
     private void Start()
     {
-        collar = transform.Find("Collar").gameObject;
+        var collarObj = transform.Find("Collar");
+        if (collarObj != null)
+        {
+            collar = collarObj.gameObject;
+        }
+        else
+        {
+            Debug.LogError("Collar not found!");
+        }
+
         collarRend = collar.GetComponent<Renderer>();
 
         // Call SetType() for the default _type of WeaponType.none
         SetType(_type);
 
-        // Dynamically create an anchor for all Projectiles
-        if(PROJECTILE_ANCHOR == null)
+        if (PROJECTILE_ANCHOR == null)
         {
             GameObject go = new GameObject("_ProjectileAnchor");
             PROJECTILE_ANCHOR = go.transform;
         }
 
-        // Find the fireDelegate of the root GameObject
         GameObject rootGO = transform.root.gameObject;
-        if(rootGO.GetComponent<Hero>() != null)
+        if (rootGO.GetComponent<Hero>() != null)
         {
             rootGO.GetComponent<Hero>().fireDelegate += Fire;
         }
@@ -72,20 +71,14 @@ public class Weapon : MonoBehaviour {
 
     public WeaponType type
     {
-        get
-        {
-            return (_type);
-        }
-        set
-        {
-            SetType(value);
-        }
+        get { return _type; }
+        set { SetType(value); }
     }
 
     public void SetType(WeaponType wt)
     {
         _type = wt;
-        if (type == WeaponType.none)
+        if (_type == WeaponType.none)
         {
             this.gameObject.SetActive(false);
             return;
@@ -102,20 +95,16 @@ public class Weapon : MonoBehaviour {
     public void Fire()
     {
         Debug.Log("Weapon Fired:" + gameObject.name);
-        // If this.gameObject is inactive, return
+
         if (!gameObject.activeInHierarchy) return;
-        // If it hasn't been enough time between shots, return
-        if (Time.time - lastShotTime < def.delayBetweenShots)
-        {
-            return;
-        }
+
+        if (Time.time - lastShotTime < def.delayBetweenShots) return;
+
         Projectile p;
         Vector3 vel = Vector3.up * def.velocity;
-        if (transform.up.y < 0)
-        {
-            vel.y = -vel.y;
-        }
-        switch (type)
+        if (transform.up.y < 0) vel.y = -vel.y;
+
+        switch (this.type) // Use this.type to avoid ambiguity
         {
             case WeaponType.blaster:
                 p = MakeProjectile();
@@ -123,22 +112,42 @@ public class Weapon : MonoBehaviour {
                 break;
 
             case WeaponType.spread:
-                p = MakeProjectile(); // Make middle Projectile
+                p = MakeProjectile();
                 p.rigid.velocity = vel;
-                p = MakeProjectile(); // Make right Projectile
+
+                p = MakeProjectile();
                 p.transform.rotation = Quaternion.AngleAxis(10, Vector3.back);
                 p.rigid.velocity = p.transform.rotation * vel;
-                p = MakeProjectile(); // Make left Projectile
+
+                p = MakeProjectile();
+                p.transform.rotation = Quaternion.AngleAxis(20, Vector3.back);
+                p.rigid.velocity = p.transform.rotation * vel;
+
+                p = MakeProjectile();
+                p.transform.rotation = Quaternion.AngleAxis(30, Vector3.back);
+                p.rigid.velocity = p.transform.rotation * vel;
+
+                p = MakeProjectile();
                 p.transform.rotation = Quaternion.AngleAxis(-10, Vector3.back);
                 p.rigid.velocity = p.transform.rotation * vel;
+
+                p = MakeProjectile();
+                p.transform.rotation = Quaternion.AngleAxis(-20, Vector3.back);
+                p.rigid.velocity = p.transform.rotation * vel;
+
+                p = MakeProjectile();
+                p.transform.rotation = Quaternion.AngleAxis(-30, Vector3.back);
+                p.rigid.velocity = p.transform.rotation * vel;
+
+                float shotDelay = def.delayBetweenShots; // Avoid modifying shared definition
                 break;
         }
     }
 
     public Projectile MakeProjectile()
     {
-        GameObject go = Instantiate<GameObject>(def.projectilePrefab);
-        if(transform.parent.gameObject.tag == "Hero")
+        GameObject go = Instantiate(def.projectilePrefab);
+        if (transform.parent.gameObject.tag == "Hero")
         {
             go.tag = "ProjectileHero";
             go.layer = LayerMask.NameToLayer("ProjectileHero");
@@ -150,6 +159,7 @@ public class Weapon : MonoBehaviour {
         }
         go.transform.position = collar.transform.position;
         go.transform.SetParent(PROJECTILE_ANCHOR, true);
+
         Projectile p = go.GetComponent<Projectile>();
         p.type = type;
         lastShotTime = Time.time;

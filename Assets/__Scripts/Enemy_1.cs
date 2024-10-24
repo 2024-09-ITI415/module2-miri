@@ -7,7 +7,7 @@ public class Enemy_1 : Enemy {
 
     [Header("Set in Inspector: Enemy_1")]
     // # seconds for a full sine wave
-    public float waveFrequency = 2;
+    public float waveFrequency = 1;
     // sine wave width in meters
     public float waveWidth = 4;
     public float waveRotY = 45;

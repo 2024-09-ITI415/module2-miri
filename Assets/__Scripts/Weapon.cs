@@ -21,7 +21,7 @@ public class WeaponDefinition
     public Color color = Color.white; // Color of Collar & power-up
     public GameObject projectilePrefab; // Prefab for projectiles
     public Color projectileColor = Color.white;
-    public float damageOnHit = 15; // Amount of damage caused
+    public float damageOnHit = 5; // Amount of damage caused
     public float continuousDamage = 0; // Damage per second (Laser)
     public float delayBetweenShots = 0.2f; // Increased delay since +15 damage
     public float velocity = 20; // Speed of projectiles
@@ -106,12 +106,21 @@ public class Weapon : MonoBehaviour
 
         switch (this.type) // Use this.type to avoid ambiguity
         {
+            case WeaponType.none:
+            // **Base Weapon (none) Fires 3x Faster**
+                def.delayBetweenShots = def.delayBetweenShots / 3;
+
+                p = MakeProjectile();
+                p.rigid.velocity = vel;
+                break;
             case WeaponType.blaster:
+            
                 p = MakeProjectile();
                 p.rigid.velocity = vel;
                 break;
 
             case WeaponType.spread:
+
                 p = MakeProjectile();
                 p.rigid.velocity = vel;
 

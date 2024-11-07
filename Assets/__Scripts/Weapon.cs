@@ -8,8 +8,8 @@ public enum WeaponType
     blaster, // A simple blaster
     spread, // Two shots simultaneously
     phaser, // [NI] Shots that move in waves
-    missile, // [NI] Homing missiles
-    laser, // [NI] Damage over time
+    missile, // Slow moving high damage missiles
+    laser, // Long Beam
     shield // Raise shieldLevel
 }
 
@@ -23,7 +23,7 @@ public class WeaponDefinition
     public Color projectileColor = Color.white;
     public float damageOnHit = 5; // Amount of damage caused
     public float continuousDamage = 0; // Damage per second (Laser)
-    public float delayBetweenShots = 0.2f; // Increased delay since +15 damage
+    public float delayBetweenShots = 0.2f; // Delay
     public float velocity = 20; // Speed of projectiles
 }
 
@@ -36,7 +36,7 @@ public class Weapon : MonoBehaviour
     private WeaponType _type = WeaponType.none;
     public WeaponDefinition def;
     public GameObject collar;
-    public float lastShotTime; // Time last shot was fired
+    public float lastShotTime; 
     private Renderer collarRend;
 
     private void Start()
@@ -89,7 +89,7 @@ public class Weapon : MonoBehaviour
         }
         def = Main.GetWeaponDefinition(_type);
         collarRend.material.color = def.color;
-        lastShotTime = 0; // You can fire immediately after _type is set.
+        lastShotTime = 0; 
     }
 
     public void Fire()
@@ -104,10 +104,9 @@ public class Weapon : MonoBehaviour
         Vector3 vel = Vector3.up * def.velocity;
         if (transform.up.y < 0) vel.y = -vel.y;
 
-        switch (this.type) // Use this.type to avoid ambiguity
+        switch (this.type) 
         {
             case WeaponType.none:
-            // **Base Weapon (none) Fires 3x Faster**
                 def.delayBetweenShots = def.delayBetweenShots / 3;
 
                 p = MakeProjectile();
@@ -121,34 +120,55 @@ public class Weapon : MonoBehaviour
 
             case WeaponType.spread:
 
+                float spreadMaxDistance = 15f;
                 p = MakeProjectile();
                 p.rigid.velocity = vel;
+                p.maxDistance = spreadMaxDistance;
 
                 p = MakeProjectile();
                 p.transform.rotation = Quaternion.AngleAxis(10, Vector3.back);
                 p.rigid.velocity = p.transform.rotation * vel;
+                p.maxDistance = spreadMaxDistance;
 
                 p = MakeProjectile();
                 p.transform.rotation = Quaternion.AngleAxis(20, Vector3.back);
                 p.rigid.velocity = p.transform.rotation * vel;
+                p.maxDistance = spreadMaxDistance;
 
                 p = MakeProjectile();
                 p.transform.rotation = Quaternion.AngleAxis(30, Vector3.back);
                 p.rigid.velocity = p.transform.rotation * vel;
+                p.maxDistance = spreadMaxDistance;
 
                 p = MakeProjectile();
                 p.transform.rotation = Quaternion.AngleAxis(-10, Vector3.back);
                 p.rigid.velocity = p.transform.rotation * vel;
+                p.maxDistance = spreadMaxDistance;
 
                 p = MakeProjectile();
                 p.transform.rotation = Quaternion.AngleAxis(-20, Vector3.back);
                 p.rigid.velocity = p.transform.rotation * vel;
+                p.maxDistance = spreadMaxDistance;
 
                 p = MakeProjectile();
                 p.transform.rotation = Quaternion.AngleAxis(-30, Vector3.back);
                 p.rigid.velocity = p.transform.rotation * vel;
+                p.maxDistance = spreadMaxDistance;
+                break;
 
-                float shotDelay = def.delayBetweenShots; // Avoid modifying shared definition
+            case WeaponType.laser:
+                p = MakeProjectile();
+                p.rigid.velocity = vel;
+                break;
+            
+            case WeaponType.missile:
+                p = MakeProjectile();
+                p.transform.rotation = Quaternion.AngleAxis(5, Vector3.back);
+                p.rigid.velocity = p.transform.rotation * vel;
+
+                p = MakeProjectile();
+                p.transform.rotation = Quaternion.AngleAxis(-5, Vector3.back);
+                p.rigid.velocity = p.transform.rotation * vel;
                 break;
         }
     }
